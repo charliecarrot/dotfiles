@@ -1,0 +1,33 @@
+#include <iostream>
+#include <fstream>
+#include "OS_Threads.h"
+
+using namespace std;
+
+int main(int argc, char **argv)
+{
+	ifstream infile(argv[1]);
+	int size;
+	infile >> size;
+	MultiThread t(size, 1);
+	int num;
+	int count = 0;
+	while (infile >> num)
+	{
+		t.threads[count].threadID = count;
+		t.threads[count].timeCreated = num;
+		infile >> num;
+		t.threads[count].timeService = num;
+		t.threads[count].remainingTime = num;
+		count++;
+	}
+	std::cout << "\nFCFS:\n\n";
+	t.FCFS();
+	std::cout << "\nRound Robin:\n\n";
+	t.RoundRobin();
+	std::cout << "\nShortest Remaining Time:\n\n";
+	t.ShortestRemainingTime();
+	std::cout << "\nHighest Response Ratio:\n\n";
+	t.HighestResponseRatio();
+	return 0;
+}

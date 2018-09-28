@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+# Perl Power! - Michael Schilli
+# Exercise 1.4
+
+# It is possible to pass scalars and
+# an array to a function by value:
+# for this, the array must be the last
+# parameter. Write a perl function
+# that upon the following call ->
+
+$a = 1;
+$b = 2;
+@c = (3, 4, 5);
+
+func($a, $b, @c);
+
+sub func
+{
+	my ($a, $b, @c) = 
+}
+ 

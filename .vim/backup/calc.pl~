@@ -1,0 +1,351 @@
+# !/usr/bin/perl
+
+# Programmers:
+#
+#  Charles Davis
+#  Ryan Kwiatkowski
+#  Fernando Rodriguez
+
+# Program:	  Interactive Calculator
+# Filename:	  calc.pl
+# Class:	  CSC 442 - Organization of Progamming Languages
+# Instructor: Dr. Dave Cook
+# Date:		  27 September 2018
+# Description: Calculates simple algebraic expressions.
+# User can store variables and assign values to variables.
+# All expressions must have a space between each character.
+#
+# Example execution:
+#
+#   >mem c
+#   >c = 5
+#   >load b
+#   >ENTER VALUE FOR B: 3
+#   >c = c + 1
+#   >mem a
+#   >a = ( c + b ) / 2
+#   >print a
+#   >VALUE OF A IS 4.5
+#   >stop
+
+use feature ':5.10';
+use strict;
+use warnings;
+
+my @keywords = (
+	"load",
+	"mem",
+	"print",
+	"stop"
+	);
+
+my %variables;
+
+print ">READY FOR INPUT\n";
+
+# Main Loop
+my $inputStr;
+do
+{
+	# Obtain user command
+	print ">";
+	$inputStr = <STDIN>;
+	chomp $inputStr;
+	$inputStr = uc $inputStr;
+	$inputStr =~ s/\/\/.*//;
+
+	my @input = split(/ /, $inputStr);
+
+	# Process user input
+	if ($input[0] =~ /^load$/i) 
+	{
+		# LOAD Operation
+		# Calls mem() to reserve space for 
+		# variable, and then prompts user for
+		# the value contained in variable.
+
+		load($input[1]);
+	}
+	elsif ($input[0] =~ /^mem$/i)
+	{
+		# MEM Operation
+		# Takes name of variable from
+		# $inputStr and checks if it 
+		# exists already. If not, reserves
+		# space for variable.
+		
+		mem($input[1]);
+	}
+	elsif ($input[0] =~ /^print$/i)
+	{
+		# PRINT Operation
+		# Prints the value of a given variable
+		# to the screen.
+
+		display($input[1]);
+	}
+	elsif (exists $variables{$input[0]})
+	{
+		# If input is of the form:
+		# var = a + 2
+
+		if ($input[1] eq '=')
+		{
+			# evaluate rhs and store in lhs
+
+			my @expression = splice(@input, 2);
+
+			$variables{$input[0]} = evaluate(@expression);
+		}
+		else
+		{
+			print(">$variables{$input[0]}\n");
+		}
+
+	}
+	elsif ($input[0] =~ /^stop$/i)
+	{
+		# STOP
+		# Exits the calc program.
+		#break;
+	}
+	else
+	{
+		# UNKNOWN COMMAND
+		print (">UNKNOWN INPUT.\n");
+	}
+
+} while ($inputStr !~ /stop/i);
+
+#Create and store variable name and value
+sub load
+{
+	# Grab name of user-defined variable and make uppercase
+    my $name = shift; 
+    
+    # Reserve space for variable (in %variables)
+    if(mem($name))
+	{
+
+		#prompt and store value
+		print(">ENTER VALUE FOR $name ");
+		my $value = <STDIN>;
+		chomp $value;
+		if (!isNumber($value))
+		{
+			print(">NOT A NUMBER\n");
+			return 0;    
+		}
+		$variables{$name} = $value;
+	}
+
+    return 1;
+}#end load
+
+
+#Create a place in memory for a variable
+sub mem
+{
+    my $name = shift; #store variable name
+    if(!isKeyword($name))
+    {
+        #checks if variable name starts with letter
+        unless ($name =~ /^[a-z]+/i)
+        {
+            print(">MUST START VARIABLE WITH LETTER\n");
+            return 1;
+        }    
+        
+        if(exists $variables{$name}) 
+        {
+            print(">VARIABLE IN USE\n");
+        }
+        else
+        {    
+            $variables{$name} = '~'; 
+        }
+    }#end if
+    else
+    {
+        print(">VARIABLE NAME IS KEYWORD\n");
+        return 0; 
+    }    
+
+    return 1; 
+} # end mem()
+
+#Determine if element is keyword
+sub isKeyword
+{
+    my $name = shift;
+    foreach my $e (@keywords)
+    {
+        if (uc($e) eq $name)
+        {
+            return 1; #true
+        }
+    }
+    return 0; #false
+}# end isKeyword
+
+sub display
+{
+	my $identifier = shift;
+
+	if (isKeyword($identifier)
+			|| !exists($variables{$identifier})
+		  	|| $variables{$identifier} eq '~' )
+	{
+		print("VARIABLE IS INVALID OR HAS NOT BEEN ASSIGNED VALUE.\n");
+	}
+	else
+	{
+		print("VALUE OF $identifier IS $variables{$identifier}\n");
+	}
+} # end display()
+
+sub evaluate
+{
+	my @array = @_;
+	my @valuestack;
+	my @operatorstack;
+	my ($operator, $lhs, $rhs, $result);
+	
+	my %prec;
+	$prec{'*'} = 3;
+	$prec{'/'} = 3;
+	$prec{'+'} = 2;
+	$prec{'-'} = 2;
+	$prec{'('} = 1;
+
+	foreach my $element (@array)
+	{
+		if (isNumber($element))
+		{
+			# If element is number
+			# Push onto valuestack
+			push @valuestack, $element;
+		}
+		elsif (exists $variables{$element})
+		{
+			# If element is variable
+			# Push value onto valuestack
+			if ($variables{$element} ne '~')
+			{
+				push @valuestack, $variables{$element}; 
+			}
+			else
+			{
+				print("$element HAS NOT BEEN ASSIGNED VALUE.\n");
+				return 0;
+			}
+		}
+		elsif ($element eq '(')
+		{
+			# If element is left paren
+			# Push element onto operator stack
+			push @operatorstack, $element;
+		}
+		elsif ($element eq ')')
+		{
+			# If element is right paren
+			# Pop values and operators from
+			# stacks until left paren
+			while($operatorstack[-1] ne '(')
+			{
+				$operator = pop @operatorstack;
+				$rhs = pop @valuestack;
+				$lhs = pop @valuestack;
+
+				$result = applyOperator($operator, $lhs, $rhs);
+				
+				push @valuestack, $result;
+			} # end while
+
+		}
+		elsif ($element =~ /[+\-\/*\^]/)
+		{
+			# If element is an operator
+			# Check if the precedence of the 
+			# operator on the top of the stack is
+			# greater or equal; if it is, pop it off
+			# and perform operation on values.
+		
+			while(@operatorstack &&
+				$prec{$operatorstack[-1]} >= $prec{$element})
+			{
+				$operator = pop @operatorstack;
+				$rhs = pop @valuestack;
+				$lhs = pop @valuestack;
+
+				$result = applyOperator($operator, $lhs, $rhs);
+
+				push @valuestack, $result;
+			} # end while
+
+			# Once operator has precedence less than
+			# operator on operator stack, push onto stack
+			push @operatorstack, $element;
+		}
+		else
+		{
+			print("EXPRESSION UNRECOGNIZED.\n");
+		}
+	} # end foreach
+
+	# No more input; deal with remaining values
+	while(@operatorstack)
+	{
+		$operator = pop @operatorstack;
+		$rhs = pop @valuestack;
+		$lhs = pop @valuestack;
+
+		$result = applyOperator($operator, $lhs, $rhs);
+
+		push @valuestack, $result;
+	}
+
+	if (@valuestack)
+	{
+		$result = pop @valuestack;
+	}
+	else
+	{
+		return 0;
+	}
+	
+	return $result;
+}# end evaluate()
+
+sub isNumber
+{
+	my $str = shift;
+
+	return 1 if ($str =~ /^\-?[0-9,.E]+$/);
+	return undef;
+} # end isNumber()
+
+sub applyOperator
+{
+	my ($operator, $lhs, $rhs) = @_;
+	my $result;
+
+	if ($operator eq '+')
+	{
+		$result = $lhs + $rhs;
+	}
+	elsif ($operator eq '-')
+	{
+		$result = $lhs - $rhs;
+	}
+	elsif ($operator eq '*')
+	{
+		$result = $lhs * $rhs;
+	}
+	elsif ($operator eq '/')
+	{
+		$result = $lhs / $rhs;
+	}
+
+	return $result;
+} # end applyOperator()

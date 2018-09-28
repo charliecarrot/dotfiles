@@ -1,0 +1,37 @@
+#!/usr/bin/perl
+
+# Perl Power! - Michael Schilli
+# Exercise 1.2
+
+# Create a 2d array of 3x3 elements
+# whose entries are the following:
+#
+#	| "0:0"  "0:1"  "0:2" |
+#	| "1:0"  "1:1"  "1:2" |
+#	| "2:0"  "2:1"  "2:2" |
+#
+# Make use of nested for loops.
+
+my @array;
+
+# Populate array
+
+foreach $i (0..2)
+{
+	foreach $j (0..2)
+	{
+		$array[$i][$j] = "$i:$j";
+	}
+}
+
+# Print values
+
+foreach $i (0..2)
+{
+	print "| ";
+	foreach $j (0..2)
+	{
+		print "\"$array[$i][$j]\" ";
+	}
+	print "|\n";
+}

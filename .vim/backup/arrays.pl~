@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+
+# Perl Power! - Michael Schilli
+# Exercise 1.1
+#
+# Extract Elements 2 to 4 from @array
+# and assign them to scalars $a, $b, 
+# and $c, using [a] index access to
+# arrays, [b] sublist access with 
+# @array[...] and [c] splice()
+ 
+@array = (1, 2, 3, 4, 5);
+
+# [a]
+
+my ($a, $b, $c) = ($array[1], 
+				   $array[2],
+				   $array[3]);
+
+print "[a] a=$a b=$b c=$c\n";
+
+
+# [b]
+
+($a, $b, $c) = @array[2..4];
+
+print "[b] a=$a b=$b c=$c\n";
+
+
+# [c]
+
+($a, $b, $c) = splice(@array, 1, 3);
+
+print "[c] a=$a b=$b c=$c\n";

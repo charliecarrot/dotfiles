@@ -1,0 +1,38 @@
+////////////////////////////////////////////
+// Program: paragraphToSentence
+//
+// Author: Charlie Davis
+//
+// Purpose: Reads in a string of no more
+//			than 10k characters. Separates
+//			sentences into lines and prints.
+//
+////////////////////////////////////////////
+
+#include <string>
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+
+int main(int argc, char** argv)
+{
+	std::string buffer;
+
+	std::getline(std::cin, buffer);
+
+	for (auto strIter = buffer.begin(); strIter != buffer.end(); ++strIter)
+	{
+		auto& ch = *strIter;
+
+		if (ch == '.')
+		{
+			buffer.insert(++strIter, '\n');
+		}
+	}
+
+	std::cout << buffer;
+	
+	return 0;
+}

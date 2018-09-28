@@ -1,0 +1,99 @@
+//////////////////////////////////////////////////////////
+// Name: Charles Davis
+// Date: 26 February 2017
+// File Name: 341HW2.cpp
+// Description: The purpose of this program is to create 
+//				a child and parent process and have them
+//				communicate with a pipe. The parent process
+//				reads from a file and passes data to the 
+//				child, which processes it and sends the
+//				result back to the parent.
+//
+//////////////////////////////////////////////////////////
+
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+using std::cout;
+using std::endl;
+using std::cin;
+
+int main(int argc, char** argv)
+{
+	int		parentfd[2];
+	int		childfd[2];
+	char	writeBuffer[190];
+	pid_t	childpid;
+
+	FILE* file = fopen("HW2_input.txt", "r");
+
+	pipe(parentfd);
+	pipe(childfd);
+
+	childpid = fork();
+
+	if (childpid == 0)
+	{
+		// Child //
+
+		// Close input side of parent pipe
+		close(parentfd[0]);
+		// and output side of child pipe
+		close(childfd[1]);
+
+		// Read data from parent pipe
+		read(parentfd[1], writeBuffer, strlen(writeBuffer));
+		close(parentfd[1]);
+
+		// PROCESS
+		cout << writeBuffer << endl;
+
+		//write(childfd[0], readBuffer, sizeof(readBuffer));
+		exit(0);
+	}
+	else if (childpid > 0)
+	{
+		// Parent //
+
+		// Close input side of child pipe
+		close(childfd[0]);
+		// Close output side of parent pipe
+		close(parentfd[1]);
+
+		// Dump file contents into writeBuffer
+		int count = 0;
+		while(!feof(file))
+		{
+			writeBuffer[count++] = fgetc(file);
+		}
+
+		// Null termination
+		if (feof(file))
+		{
+			writeBuffer[--count] = 0;
+		}
+		else
+		{
+			writeBuffer[sizeof(writeBuffer) - 1] = 0;
+		}
+
+		write(parentfd[0], writeBuffer, strlen(writeBuffer));
+
+		close(parentfd[0]);
+
+		wait();
+
+		//read(fileDescriptor[0], writeBuffer, sizeof(readBuffer));
+	}
+	else
+	{
+		// Fork failed
+		cout << "Fork failed\n";
+		return 1;
+	}
+
+	fclose(file);
+}

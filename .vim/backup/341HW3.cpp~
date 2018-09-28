@@ -1,0 +1,71 @@
+// use -lpthread flag
+
+#include <iostream>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <pthread.h>
+#include <cstdlib>
+#include <cstdio>
+
+#include "341_Semaphore.h"
+
+using std::cout;
+using std::endl;
+
+// Define number of threads; use command line input in actual program
+#define NUM_THREADS 4
+
+long int sharedcount; // counting variable shared across threads
+pthread_mutex_t count_mutex;
+
+void* ThreadedFunction(void*);
+
+int main(int argc, char** argv)
+{
+	pthread_mutex_init(&count_mutex, NULL); // function to create mutex
+
+	pthread_t threads[NUM_THREADS]; // array to store ID of created threads
+
+	int rc; // error code. will be 0 if good and other number if not
+
+	sharedcount = 0;
+
+	// create threads
+	for (int i = 0; i < NUM_THREADS; i++)
+	{
+		cout << "main() : created thread, " << i << endl;
+
+		rc = pthread_create(&threads[i], NULL, ThreadedFunction, (void*)i);
+	}
+
+	for (int i = 0; i < NUM_THREADS; i++)
+	{
+		// makes sure main thread doesn't exit if other threads are running
+		pthread_join(threads[i], NULL);
+	}
+
+	pthread_exit(NULL); // kill main thread
+
+	return 0;
+}
+
+void* ThreadedFunction(void* threadid)
+{
+	int success;
+	long id = (long)threadid;
+
+	success = pthread_mutex_lock(&count_mutex);
+
+	cout << "Thread " << id << " beginning." << endl;
+	for (int i = 0; i < 10000000; i++)
+	{
+		sharedcount++;
+	}
+
+	cout << "Thread " << id << " exiting." << endl;
+	cout << sharedcount << endl;
+
+	success = pthread_mutex_unlock(&count_mutex);
+
+	pthread_exit(NULL);
+}

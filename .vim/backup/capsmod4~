@@ -1,0 +1,5 @@
+#!/bin/bash
+setxkbmap -option caps:super
+xrdb -merge ~/.Xresources
+xcape -e 'Shift_L=Escape'
+xmodmap /home/zezhyrule/.Xmodmap

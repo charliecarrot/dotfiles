@@ -1,0 +1,6 @@
+#!/bin/bash
+# paragraphToSentence
+# Charles Davis
+# Shell script to compile and run  paragraphToSentence program.
+g++ -std=c++11 paragraphToSentence.cpp -o paragraphToSentence
+paragraphToSentence

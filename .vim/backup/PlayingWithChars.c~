@@ -1,0 +1,35 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdlib.h>
+
+int main()
+{
+	char ch;
+	char s[100];
+	char sen[100];
+
+	// Read ch
+	scanf("%c", &ch);
+	
+	// Read string s
+	scanf("%s", &s);
+	
+	// Read sentence sen
+	scanf("\n"); // discard previous newline
+	scanf("%[^\n]%*c", sen);
+	
+	// Print ch
+	printf("%c", ch);
+	printf("\n");
+
+	// Print s
+	printf("%s", s);
+	printf("\n");
+	
+	// Print sen
+	printf("%s", sen);
+	printf("\n");
+
+	return 0;
+}

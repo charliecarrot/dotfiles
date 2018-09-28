@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+# Perl Power! - Michael Schilli
+# Exercise 1.3
+
+# Output the values of @array as a
+# string in the format "(1-2-3)".
+# Assemble the string step-by-step
+# using a for loop. Then, solve
+# using the join function.
+
+@array = (1,2,3);
+
+# Using for loop
+
+print "(";
+
+foreach $i (0..$#array)
+{
+	print "$array[$i]";
+	print "-" unless $i == $#array;
+}
+
+print ")";

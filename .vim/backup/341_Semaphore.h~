@@ -1,0 +1,51 @@
+#pragma once
+
+class Semaphore
+{
+private:
+	int val;
+	pthread_cond_t cond;
+	extern pthread_mutex_t mutex;
+
+public:
+	Semaphore(int val)
+	{
+		this->val = val;
+		pthread_cond_init(&cond, NULL);
+		pthread_mutex_init(&mutex, NULL);
+	}
+
+	void down(long id)
+	{
+		pthread_mutex_lock(&mutex);
+		
+		// If value is 0 or less, no room for more threads
+		while (val <= 0)
+		{
+			// wait until val > 0
+			std::cout << "Thread " << id << " is waiting.\n";
+			pthread_cond_wait(&cond, &mutex);
+		}
+
+		val--;
+
+		pthread_mutex_unlock(&mutex);
+	}
+
+	void up()
+	{
+		pthread_mutex_lock(&mutex);
+
+		int oldVal = val;
+		val++;
+
+		pthread_mutex_unlock(&mutex);
+
+		if (oldVal == 0)
+		{
+			// Now there's room
+			// Unblock thread
+			pthread_cond_signal(&cond);
+		}
+	}
+};

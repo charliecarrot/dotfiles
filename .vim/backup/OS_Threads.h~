@@ -1,0 +1,257 @@
+#ifndef OS_THREADS_H
+#define OS_THREADS_H
+#include <iostream>
+
+//Stores some basic information to simulate a thread running an application
+class MyThread
+{
+public:
+    MyThread()
+    {
+        threadID = -1;
+        timeCreated = -1;
+        timeService = -1;
+        turnAroundTime = -1;
+        remainingTime = -1;
+    }
+	int threadID;
+	int timeCreated;
+	int timeService;
+	int turnAroundTime;
+	int remainingTime;
+};
+
+//Creates an array of threads
+class MultiThread
+{
+public:
+    //creates the array for the threads.
+	MultiThread(int threadNum, int quant)
+	{
+		threads = new MyThread[threadNum];
+		threadNumber = threadNum;
+		timeQuantum = quant;
+	    totalTAT = 0;
+	}
+	~MultiThread()
+	{
+		delete []threads;
+	}
+    
+    //initializes all of the values inside of each thread
+    //in the array.
+	int Thread_Init(int,int,int);
+    
+    //Implements first come first serve
+	void FCFS();
+    
+    //prints each thread info. Takes the thread ID as an argument
+	void printThread(int);
+	void RoundRobin();
+	void ShortestRemainingTime();
+	void HighestResponseRatio();
+
+	MyThread *threads;
+private:
+    //Simulates performing action for a time quantum
+	void wait();
+    
+    //Prints the mean TAT. 
+	void printMean();
+    
+    //Displays which thread is getting to run.
+    void doWork(int);
+    
+    //Keeps track of size of array of threads.
+	int threadNumber;
+    
+    //Stores the time quantum.
+	int timeQuantum;
+
+	double totalTAT;
+};
+
+int MultiThread::Thread_Init(int id, int create, int need)
+{
+	if (id >= 0 && id < threadNumber)
+	{
+		threads[id].threadID = id;
+		threads[id].timeCreated = create;
+		threads[id].timeService = need;
+		threads[id].remainingTime = need;
+		return 0;
+	}
+	else
+		return -1;
+}
+
+void MultiThread::wait()
+{
+	for (int i = 0; i < 100000000; i++);
+}
+
+void MultiThread::printMean()
+{
+	std::cout << "Average (mean) of normalized TAT: " << totalTAT / threadNumber << std::endl;
+}
+
+void MultiThread::printThread(int id)
+{
+	totalTAT += (double)threads[id].turnAroundTime / (double)threads[id].timeService;
+	std::cout << "Thread T[" << id << "]: Turn around time " << threads[id].turnAroundTime 
+		<< ", and Normalized TAT " << (double)threads[id].turnAroundTime / (double)threads[id].timeService << std::endl;
+}
+void MultiThread::doWork(int id)
+{
+    std::cout << "Thread T[" << id << "] started and running." << std::endl;
+}
+void MultiThread::FCFS()
+{
+	int time = 0;
+	double average = 0;
+	for (int i = 0; i < threadNumber; i++)
+	{
+        doWork(i);
+		for (int j = 0; j < threads[i].timeService; j++)
+		{
+			time++;
+            wait();
+		}
+		threads[i].turnAroundTime = time - threads[i].timeCreated;
+		average += (double)threads[i].turnAroundTime;
+		printThread(i);
+	}
+	printMean();
+
+}
+
+void MultiThread::RoundRobin()
+{
+	int time = 0;
+	bool remaining = true;
+
+	while (remaining)
+	{
+		remaining = false;
+		for (int i = 0; i < threadNumber; i++)
+		{
+			if (threads[i].remainingTime > 0)
+			{
+				remaining = true;
+				doWork(i);
+				threads[i].remainingTime -= timeQuantum;
+				time += timeQuantum;
+				if (threads[i].remainingTime < 0)
+				{
+					time -= (0 - threads[i].remainingTime);
+				}
+				wait();
+
+				if (threads[i].remainingTime == 0)
+				{
+					threads[i].turnAroundTime = time - threads[i].timeCreated;
+					printThread(i);
+				}
+			}
+		}
+	}
+	printMean();
+}
+
+void MultiThread::ShortestRemainingTime()
+{
+	int time = 0;
+	int shortest = 0;
+	int last = 0;
+	int totalTime = 0;
+
+	for (int i = 0; i < threadNumber; i++)
+	{
+		totalTime += threads[i].timeService;
+	}
+	while (time < totalTime)
+	{
+		time++;
+		threads[shortest].remainingTime--;
+		wait();
+		
+		for (int i = 0; i < threadNumber; i++)
+		{
+			if (time == threads[i].timeCreated
+				&& threads[i].remainingTime < threads[shortest].remainingTime
+				&& threads[i].remainingTime > 0)
+			{
+				last = shortest;
+				shortest = i;
+				doWork(shortest);
+			}
+		}
+
+		if (threads[shortest].remainingTime == 0)
+		{
+			threads[shortest].turnAroundTime = time - threads[shortest].timeCreated;
+			printThread(shortest);
+			if (threads[last].remainingTime <
+				   threads[shortest + 1].remainingTime
+				&& threads[last].remainingTime > 0)
+			{
+				shortest = last;
+			}
+			else
+			{
+				shortest++;
+			}
+		}
+	}
+	printMean();
+
+}
+
+void MultiThread::HighestResponseRatio()
+{
+	int time = 0;
+	int responseRatio = -99;
+	int totalTime = 0;
+
+	for (int i = 0; i < threadNumber; i++)
+	{
+		totalTime += threads[i].timeService;
+	}
+	while (time < totalTime)
+	{
+		int ratioCheck = 0;
+		int next = 0;
+		for (int i = 0; i < threadNumber; i++)
+		{
+			if (threads[i].timeCreated <= time
+				&& threads[i].remainingTime > 0)
+			{
+				ratioCheck = ((threads[i].timeService + 
+								(time - threads[i].timeCreated))
+							  / threads[i].timeService);
+				if (responseRatio < ratioCheck)
+				{
+					responseRatio = ratioCheck;
+					next = i;
+					doWork(next);
+					for (int j = 0; j < threads[next].timeService; j++)
+					{
+						wait();
+					}
+					threads[next].remainingTime = 0;
+				}
+			}
+		}
+		
+		time += threads[next].timeService;
+		
+		if (threads[next].remainingTime == 0)
+		{
+			threads[next].turnAroundTime = time - threads[next].timeCreated;
+			printThread(next);
+		}
+	}
+	printMean();
+}
+
+#endif
