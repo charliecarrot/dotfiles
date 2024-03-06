@@ -1,6 +1,6 @@
                 " " " " " " " " " " " " " "
                 " Author: Charlie Davis   "
-                " Last Edited: 2018-09-28 "
+                " Last Edited: 2024-03-05 "
                 "                         "
                 " " " " " " " " " " " " " "
 	
@@ -9,7 +9,7 @@
 "                ~ = General Settings = ~
 "                  ====================
 
-set nocompatible			   " Don't pretend to be vi
+set nocompatible	       " Don't pretend to be vi
 
 if has("vms")
     set nobackup               " Do not keep a backup file, use versions instead
@@ -19,15 +19,15 @@ endif
 
 set backupdir=~/.vim/backup    " Send backup files to .vim/backup
 set noswapfile                 " Disable saving swap files
-set history=50                 " Keep 50 lines of command line history
+set history=200                " Keep 50 lines of command line history
 set ruler                      " Show the cursor position all the time
 set showcmd                    " Display incomplete commands
 set incsearch                  " Do incremental searching
 set ignorecase                 " Ignore case in searches--
 set smartcase                  " unless you enter a capital letter
-set wildmenu				   " Display wild menu
+set wildmenu		       " Display wild menu
 set ls=2                       " Shows statusline always
-set nu                         " Show line numebrs
+set nu                         " Show line numbers
 set scrolloff=5                " Start scrolling when 5 lines from margins
 set timeout ttimeoutlen=100	   " Time out length at 100ms
 
@@ -42,11 +42,6 @@ let &path.="src/include,/usr/include/AL,"
 "                ~ =    Appearance    = ~
 "                  ====================
 						
-set t_Co=256			
-set background=dark
-colorscheme Tomorrow-Night-Eighties
-let g:hybrid_custom_term_colors = 1
-
 " Switch syntax highlighting on when the terminal has colors
 " Also switch on highlighting the last used search pattern
 if &t_Co > 2 || has("gui_running")
@@ -81,14 +76,17 @@ if has("autocmd")
   autocmd FileType text setlocal textwidth=78
 
   " When editing a file, always jump to the last known cursor position.
-  " Don't do it when the position is invalid or when inside an event handler
-  " (happens when dropping a file on gvim).
-  " Also don't do it when the mark is in the first line, that is the default
-  " position when opening a file.
+  " Don't do it when the position is invalid, when inside an event handler
+  " (happens when dropping a file on gvim), for a commit or rebase message
+  " (likely a different one than last time), and when using xxd(1) to filter
+  " and edit binary files (it transforms input files back and forth, causing
+  " them to have dual nature, so to speak)
   autocmd BufReadPost *
-    \ if line("'\"") > 1 && line("'\"") <= line("$") |
-    \   exe "normal! g`\"" |
-    \ endif
+			  \ let line = line("'\"")
+			  \ | if line >= 1 && line <= line("$") && &filetype !~# 'commit'
+			  \      && index(['xxd', 'gitrebase'], &filetype) == -1
+			  \ |   execute "normal! g`\""
+			  \ | endif
 
   augroup END
 
@@ -115,7 +113,7 @@ endif " has("autocmd")
 set tabstop=4                  " tab character is 4 columns
 set softtabstop=4              " tab key indents 4
 set shiftwidth=4               " ==, <<, and >> indent 4 columns
-set noexpandtab                  " tab characters turn into spaces
+set noexpandtab                " tab characters turn into spaces
 
 
 
